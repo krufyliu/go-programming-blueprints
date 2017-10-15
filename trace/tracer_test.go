@@ -15,3 +15,8 @@ func TestNew(t *testing.T) {
 		}
 	}
 }
+
+func TestOff(t *testing.T) {
+	silenceTracer := Off()
+	silenceTracer.Trace("Silence trace")
+}
