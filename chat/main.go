@@ -10,7 +10,6 @@ import (
 	"sync"
 
 	"github.com/gorilla/handlers"
-	"github.com/krufyliu/go-programming-blueprints/trace"
 )
 
 type templateHandler struct {
@@ -30,7 +29,7 @@ func main() {
 	var addr = flag.String("addr", ":8888", "The addr of the application")
 	flag.Parse()
 	var r = newRoom()
-	r.tracer = trace.New(os.Stdout)
+	// r.tracer = trace.New(os.Stdout)
 	http.Handle("/", &templateHandler{filename: "chat.html"})
 	http.Handle("/room", r)
 	go r.run()
