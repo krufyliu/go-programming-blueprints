@@ -1,7 +1,8 @@
 package main
 
 type message struct {
-	From    string
-	Message string
-	When    int64
+	From      string
+	Message   string
+	When      int64
+	AvatarURL string
 }

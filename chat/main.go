@@ -52,6 +52,7 @@ func main() {
 	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
 	http.Handle("/room", r)
 	http.HandleFunc("/auth/", loginHandler)
+	http.HandleFunc("/logout", logOutHandler)
 	go r.run()
 	log.Println("Starting web server on ", *addr)
 	if err := http.ListenAndServe(*addr, handlers.LoggingHandler(os.Stdout, http.DefaultServeMux)); err != nil {
