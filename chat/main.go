@@ -17,6 +17,12 @@ import (
 	"github.com/stretchr/objx"
 )
 
+var avatars Avatar = TryAvatars{
+	UseFileSystemAvatar,
+	UseAuthAvatar,
+	UseGravatarAvatar,
+}
+
 type templateHandler struct {
 	once     sync.Once
 	filename string
@@ -39,7 +45,7 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 func main() {
 	var addr = flag.String("addr", ":8888", "The addr of the application")
 	flag.Parse()
-	var r = newRoom(UserFileSystemAvatar)
+	var r = newRoom()
 	// r.tracer = trace.New(os.Stdout)
 	http.Handle("/login", &templateHandler{filename: "login.html"})
 	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))

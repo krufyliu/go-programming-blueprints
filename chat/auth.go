@@ -5,6 +5,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/stretchr/objx"
 )
 
+// ChatUser represent
 type ChatUser interface {
 	UniqueID() string
 	AvatarURL() string
@@ -91,13 +93,19 @@ func loginHandler(w http.ResponseWriter, req *http.Request) {
 			return
 		}
 		crypto := md5.New()
-		io.WriteString(crypto, user.Email())
+		io.WriteString(crypto, strings.ToLower(user.Email()))
 		userID := hex.EncodeToString(crypto.Sum(nil))
+		chatUser := &chatUser{User: user}
+		chatUser.uniqueID = userID
+		avatarURL, err := avatars.GetAvatarURL(chatUser)
+		if err != nil {
+			log.Fatalln("Error when trying to GetAvatarURL", "-", err)
+		}
 		authCookieValue := objx.New(map[string]interface{}{
-			"UserID":    userID,
+			"UserID":    chatUser.UniqueID(),
 			"Name":      user.Nickname(),
 			"Email":     user.Email(),
-			"AvatarURL": user.AvatarURL(),
+			"AvatarURL": avatarURL,
 		}).MustBase64()
 		http.SetCookie(w, &http.Cookie{
 			Name:  "auth",

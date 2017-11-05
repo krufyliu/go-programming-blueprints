@@ -1,11 +1,7 @@
 package main
 
 import (
-	"crypto/md5"
 	"errors"
-	"fmt"
-	"io"
-	"strings"
 )
 
 // ErrNoAvatarURL is the error that is returned when the
@@ -19,45 +15,48 @@ type Avatar interface {
 	// or returns an error if something goes wrong.
 	// ErrNoAvatarURL is returned if the object is unable to get
 	// a URL for the specified client.
-	GetAvatarURL(c *client) (string, error)
+	GetAvatarURL(u ChatUser) (string, error)
 }
 
 type AuthAvatar struct{}
 
 var UseAuthAvatar AuthAvatar
 
-func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
-	if url, ok := c.userData["AvatarUrl"]; ok {
-		if urlStr, ok := url.(string); ok {
-			return urlStr, nil
-		}
+func (AuthAvatar) GetAvatarURL(u ChatUser) (string, error) {
+	if u.AvatarURL() != "" {
+		return u.AvatarURL(), nil
 	}
 	return "", ErrNoAvatarURL
 }
 
 type GravatarAvatar struct{}
 
-var UserGravatarAvatar GravatarAvatar
+var UseGravatarAvatar GravatarAvatar
 
-func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
-	if email, ok := c.userData["Email"]; ok {
-		if emailStr, ok := email.(string); ok {
-			m := md5.New()
-			io.WriteString(m, strings.ToLower(emailStr))
-			return fmt.Sprintf("//www.gravatar.com/avatar/%x", m.Sum(nil)), nil
-		}
+func (GravatarAvatar) GetAvatarURL(u ChatUser) (string, error) {
+	if u.UniqueID() != "" {
+		return "//www.gravatar.com/avatar/" + u.UniqueID(), nil
 	}
 	return "", ErrNoAvatarURL
 }
 
 type FileSystemAvatar struct{}
 
-var UserFileSystemAvatar FileSystemAvatar
+var UseFileSystemAvatar FileSystemAvatar
 
-func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
-	if userID, ok := c.userData["UserID"]; ok {
-		if userIDStr := userID.(string); ok {
-			return "/avatars/" + userIDStr + ".jpg", nil
+func (FileSystemAvatar) GetAvatarURL(u ChatUser) (string, error) {
+	if u.UniqueID() != "" {
+		return "/avatars/" + u.UniqueID() + ".jpg", nil
+	}
+	return "", ErrNoAvatarURL
+}
+
+type TryAvatars []Avatar
+
+func (a TryAvatars) GetAvatarURL(u ChatUser) (string, error) {
+	for _, avatar := range a {
+		if url, err := avatar.GetAvatarURL(u); err == nil {
+			return url, nil
 		}
 	}
 	return "", ErrNoAvatarURL
