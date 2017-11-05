@@ -37,25 +37,31 @@ func (h *templateHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 }
 
 func main() {
-	gomniauth.SetSecurityKey("EDGE")
+	var addr = flag.String("addr", ":8888", "The addr of the application")
+	flag.Parse()
+	var r = newRoom(UserFileSystemAvatar)
+	// r.tracer = trace.New(os.Stdout)
+	http.Handle("/login", &templateHandler{filename: "login.html"})
+	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
+	http.Handle("/uploader", &Uploader{})
+	http.Handle("/room", r)
+	http.HandleFunc("/auth/", loginHandler)
+	http.HandleFunc("/logout", logOutHandler)
+	http.Handle("/avatars/",
+		http.StripPrefix("/avatars", http.FileServer(http.Dir("avatars"))))
+	go r.run()
+	log.Println("Starting web server on ", *addr)
+	if err := http.ListenAndServe(*addr, handlers.LoggingHandler(os.Stdout, http.DefaultServeMux)); err != nil {
+		log.Fatal("ListenAndServe: ", err)
+	}
+}
+
+func init() {
+	gomniauth.SetSecurityKey("960af09")
 	gomniauth.WithProviders(
 		github.New("a547d64960af094dd75e", "008164004cb3be53377f84f8000a624af74073fa",
 			"http://localhost:8888/auth/callback/github"),
 		google.New("", "", "http://localhost:8888/auth/callback/google"),
 		facebook.New("", "", "http://localhost:8888/auth/callback/facebook"),
 	)
-	var addr = flag.String("addr", ":8888", "The addr of the application")
-	flag.Parse()
-	var r = newRoom()
-	// r.tracer = trace.New(os.Stdout)
-	http.Handle("/login", &templateHandler{filename: "login.html"})
-	http.Handle("/chat", MustAuth(&templateHandler{filename: "chat.html"}))
-	http.Handle("/room", r)
-	http.HandleFunc("/auth/", loginHandler)
-	http.HandleFunc("/logout", logOutHandler)
-	go r.run()
-	log.Println("Starting web server on ", *addr)
-	if err := http.ListenAndServe(*addr, handlers.LoggingHandler(os.Stdout, http.DefaultServeMux)); err != nil {
-		log.Fatal("ListenAndServe: ", err)
-	}
 }
